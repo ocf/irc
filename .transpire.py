@@ -342,7 +342,7 @@ def objects():
                             "name": "gamja",
                             "image": get_image_tag("gamja"),
                             "ports": [{"containerPort": 80}, {"containerPort": 443}],
-                        }
+                        },
                         {
                             "name": "config-reloader",
                             "image": f"ghcr.io/ergochat/ergo:v{version}",
