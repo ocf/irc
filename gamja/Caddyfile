@@ -1,0 +1,5 @@
+irc-dev.ocf.berkeley.edu {
+    file_server
+    root * /gamja
+    tls /etc/ssl/tls.crt /etc/ssl/tls.key
+}
