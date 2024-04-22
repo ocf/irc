@@ -342,6 +342,9 @@ def objects():
                             "name": "gamja",
                             "image": get_image_tag("gamja"),
                             "ports": [{"containerPort": 80}, {"containerPort": 443}],
+                            "volumeMounts": [
+                                {"name": "ircd-tls", "mountPath": "/etc/ssl"},
+                            ],
                         },
                         {
                             "name": "config-reloader",
