@@ -49,7 +49,7 @@ def objects():
                 "port": 6697,
                 "preload": True,
             },
-            "websockets": {"allowed-origins": [f"https://{server_dns}/"]},
+            "websockets": {"allowed-origins": [f"https://{server_dns}"]},
             "casemapping": "ascii",
             "enforce-utf8": True,
             "lookup-hostnames": False,
