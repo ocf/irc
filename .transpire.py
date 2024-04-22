@@ -6,8 +6,11 @@ import yaml
 
 name = "ergo"
 
+
 def images():
     yield Image(name="gamja", path=Path("/"), target="gamja")
+    yield Image(name="sopel", path=Path("/"), target="sopel")
+
 
 def objects():
     version = get_versions(__file__)[name]["version"]
@@ -378,6 +381,67 @@ def objects():
                     "spec": {
                         "accessModes": ["ReadWriteOnce"],
                         "resources": {"requests": {"storage": "16Gi"}},
+                    },
+                }
+            ],
+        },
+    }
+
+    yield {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {"name": "sopel-config"},
+        "data": {
+            "default.cfg": Path(__file__)
+            .parent.joinpath("sopel", "default.cfg")
+            .read_text()
+        },
+    }
+
+    sopel_labels = {"k8s.ocf.io/app": name, "k8s.ocf.io/component": "sopel"}
+    yield {
+        "apiVersion": "apps/v1",
+        "kind": "StatefulSet",
+        "metadata": {"name": "sopel"},
+        "spec": {
+            "replicas": 1,
+            "serviceName": "sopel",
+            "selector": {"matchLabels": sopel_labels},
+            "template": {
+                "metadata": {"labels": sopel_labels},
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "sopel",
+                            "image": get_image_tag("sopel"),
+                            # Mount default.cfg to /home/sopel/.sopel/default.cfg
+                            "volumeMounts": [
+                                {
+                                    "name": "sopel-config",
+                                    "mountPath": "/home/sopel/.sopel/default.cfg",
+                                    "subPath": "default.cfg",
+                                },
+                                {
+                                    "name": "sopel-data",
+                                    "mountPath": "/home/sopel/.sopel/",
+                                },
+                            ],
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "sopel-config",
+                            "configMap": {"name": "sopel-config"},
+                        },
+                    ],
+                },
+            },
+            "volumeClaimTemplates": [
+                {
+                    "metadata": {"name": "sopel-data"},
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": "32Gi"}},
                     },
                 }
             ],
