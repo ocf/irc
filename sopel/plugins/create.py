@@ -39,7 +39,7 @@ def setup(bot):
                     function=func.__name__,
                     exception=ex,
                 )
-                bot.say("#rebuild", error_msg)
+                bot.say(error_msg, "#rebuild")
                 bot.handle_error(
                     textwrap.dedent(
                         """
@@ -136,7 +136,7 @@ def celery_listener(bot):
 
     def bot_announce(targets, message):
         for target in targets:
-            bot.say(target, message)
+            bot.say(message, target)
 
     def on_account_created(event):
         request = event["request"]
