@@ -389,27 +389,25 @@ def objects():
 
     yield {
         "apiVersion": "v1",
-        "kind": "ConfigMap",
+        "kind": "Secret",
         "metadata": {"name": "sopel-config"},
-        "data": {
-            "default.cfg": Path(__file__)
-            .parent.joinpath("sopel", "default.cfg")
-            .read_text(),
+        "stringData": {
+            "default.cfg": "This file exists only on Vault.",
         },
     }
 
-    # This feels a bit hacky but like... meh.
+    def get_plugin(name):
+        return Path(__file__).parent.joinpath("sopel", "plugins", name).read_text()
+
+    # This feels a bit hacky but like... meh... it's not going to go over the 1MB limit.
     yield {
         "apiVersion": "v1",
         "kind": "ConfigMap",
         "metadata": {"name": "sopel-plugins"},
         "data": {
-            "check.py": Path(__file__)
-            .parent.joinpath("sopel", "plugins", "check.py")
-            .read_text(),
-            "lab.py": Path(__file__)
-            .parent.joinpath("sopel", "plugins", "lab.py")
-            .read_text(),
+            "check.py": get_plugin("check.py"),
+            "lab.py": get_plugin("lab.py"),
+            "create.py": get_plugin("create.py"),
         },
     }
 
@@ -450,7 +448,7 @@ def objects():
                     "volumes": [
                         {
                             "name": "sopel-config",
-                            "configMap": {"name": "sopel-config"},
+                            "secret": {"secretName": "sopel-config"},
                         },
                         {
                             "name": "sopel-plugins",
