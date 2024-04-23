@@ -394,7 +394,19 @@ def objects():
         "data": {
             "default.cfg": Path(__file__)
             .parent.joinpath("sopel", "default.cfg")
-            .read_text()
+            .read_text(),
+        },
+    }
+
+    # This feels a bit hacky but like... meh.
+    yield {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {"name": "sopel-plugins"},
+        "data": {
+            "check.py": Path(__file__)
+            .parent.joinpath("sopel", "plugins", "check.py")
+            .read_text(),
         },
     }
 
@@ -425,6 +437,10 @@ def objects():
                                     "name": "sopel-data",
                                     "mountPath": "/home/sopel/.sopel/",
                                 },
+                                {
+                                    "name": "sopel-plugins",
+                                    "mountPath": "/home/sopel/.sopel/plugins/",
+                                },
                             ],
                         }
                     ],
@@ -433,6 +449,10 @@ def objects():
                             "name": "sopel-config",
                             "configMap": {"name": "sopel-config"},
                         },
+                        {
+                            "name": "sopel-plugins",
+                            "configMap": {"name": "sopel-plugins"},
+                        }
                     ],
                 },
             },

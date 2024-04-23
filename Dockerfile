@@ -15,7 +15,8 @@ COPY gamja/config.json /gamja/config.json
 FROM docker.io/python:3.11 AS sopel
 
 RUN adduser --disabled-password --gecos "" --home /home/sopel --uid 1000 sopel
+RUN apt-get update && apt-get install -y --no-install-recommends libcrack2-dev && rm -rf /var/lib/apt/lists/*
 USER sopel
 ENV PATH="${PATH}:/home/sopel/.local/bin"
-RUN python -m pip install pipx && pipx install git+https://github.com/sopel-irc/sopel.git#ab32aca08f7bf67d1ba754fdfc22a10ee5a442d0
+RUN python -m pip install pipx && pipx install git+https://github.com/sopel-irc/sopel.git#ab32aca08f7bf67d1ba754fdfc22a10ee5a442d0 && pipx inject sopel ocflib
 CMD [ "sopel", "start" ]
