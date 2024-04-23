@@ -2,5 +2,9 @@
 	"server": {
 		"url": "wss://irc-dev.ocf.berkeley.edu:8097",
 		"autojoin": "#rebuild"
+	},
+	"oauth2": {
+		"url": "https://idm.ocf.berkeley.edu/realms/ocf",
+		"client_id": "ergo"
 	}
 }

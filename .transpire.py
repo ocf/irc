@@ -174,6 +174,15 @@ def objects():
                 "kill-timeout": "1s",
                 "max-concurrency": 64,
             },
+            "oauth2": {
+                "enabled": True,
+                "autocreate": True,
+                "introspection-url": "https://idm.ocf.berkeley.edu/realms/ocf/protocol/openid-connect/token/introspect",
+                "introspection-timeout": "10s",
+                "client-id": "ergo",
+                # Set via ERGO__ACCOUNTS__OAUTH2__CLIENT_SECRET
+                # "client-secret": ""
+            }
         },
         "channels": {
             "default-modes": "+ntC",
@@ -318,6 +327,16 @@ def objects():
         },
     }
 
+    # Secrets
+    yield {
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "metadata": {"name": "ircd-secrets"},
+        "stringData": {
+            "ERGO__ACCOUNTS__OAUTH2__CLIENT_SECRET": "",
+        },
+    }
+
     ircd_labels = {"k8s.ocf.io/app": name, "k8s.ocf.io/component": "ircd"}
     yield {
         "apiVersion": "apps/v1",
@@ -333,13 +352,14 @@ def objects():
                     "containers": [
                         {
                             "name": "ergo",
-                            "image": f"ghcr.io/ergochat/ergo:v{version}",
+                            "image": f"ghcr.io/ergochat/ergo:{version}",
                             "ports": [{"containerPort": 8097}, {"containerPort": 6697}],
                             "volumeMounts": [
                                 {"name": "ircd-volume", "mountPath": "/ircd/db"},
                                 {"name": "ircd-config", "mountPath": "/ircd"},
                                 {"name": "ircd-tls", "mountPath": "/etc/ssl"},
                             ],
+                            "envFrom": [{"secretRef": {"name": "ircd-secrets"}}],
                         },
                         {
                             "name": "gamja",
@@ -351,7 +371,7 @@ def objects():
                         },
                         {
                             "name": "config-reloader",
-                            "image": f"ghcr.io/ergochat/ergo:v{version}",
+                            "image": f"ghcr.io/ergochat/ergo:{version}",
                             "command": ["/bin/sh"],
                             "args": [
                                 "-c",
