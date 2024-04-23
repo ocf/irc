@@ -41,7 +41,7 @@ def check(bot, trigger):
         else:
             created = "unknown"
 
-        bot.reply(
+        bot.say(
             "{user} ({uid}) | {name} | created {created} | groups: {groups}".format(
                 user=user,
                 uid=attrs["uidNumber"],
@@ -49,10 +49,9 @@ def check(bot, trigger):
                 created=created,
                 groups=", ".join(groups),
             ),
-            ping=False,
         )
     else:
-        bot.reply(f"{user} does not exist", ping=False)
+        bot.say(f"{user} does not exist")
 
 
 def alphanum(word):

@@ -407,6 +407,9 @@ def objects():
             "check.py": Path(__file__)
             .parent.joinpath("sopel", "plugins", "check.py")
             .read_text(),
+            "lab.py": Path(__file__)
+            .parent.joinpath("sopel", "plugins", "lab.py")
+            .read_text(),
         },
     }
 
