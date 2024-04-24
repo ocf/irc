@@ -29,13 +29,13 @@ def objects():
                 "127.0.0.1:6667": None,
                 "[::1]:6667": None,
                 ":6697": {
-                    "tls": {"cert": "/etc/ssl/tls.crt", "key": "/etc/ssl/tls.key"},
+                    "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                     "proxy": False,
                     "min-tls-version": 1.2,
                 },
                 ":8097": {
                     "websocket": True,
-                    "tls": {"cert": "/etc/ssl/tls.crt", "key": "/etc/ssl/tls.key"},
+                    "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                 },
             },
             "unix-bind-mode": 511,
@@ -357,7 +357,7 @@ def objects():
                             "volumeMounts": [
                                 {"name": "ircd-volume", "mountPath": "/ircd/db"},
                                 {"name": "ircd-config", "mountPath": "/ircd"},
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl"},
+                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
                             ],
                             "envFrom": [{"secretRef": {"name": "ircd-secrets"}}],
                         },
@@ -366,7 +366,7 @@ def objects():
                             "image": get_image_tag("gamja"),
                             "ports": [{"containerPort": 80}, {"containerPort": 443}],
                             "volumeMounts": [
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl"},
+                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
                             ],
                         },
                         {
@@ -375,11 +375,11 @@ def objects():
                             "command": ["/bin/sh"],
                             "args": [
                                 "-c",
-                                'echo "Watching /ircd/";\ninotifyd - /ircd/:wMymndox /etc/ssl/:wMymndox | while read -r notifies ; do\n  echo "$notifies";\n  echo "notify received, sending SIGHUP";\n  pkill -HUP ergo;\ndone\necho "Exiting.";\n',
+                                'echo "Watching /ircd/";\ninotifyd - /ircd/:wMymndox /etc/ssl/server_certs/:wMymndox | while read -r notifies ; do\n  echo "$notifies";\n  echo "notify received, sending SIGHUP";\n  pkill -HUP ergo;\ndone\necho "Exiting.";\n',
                             ],
                             "volumeMounts": [
                                 {"name": "ircd-config", "mountPath": "/ircd"},
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl"},
+                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
                             ],
                         },
                     ],
