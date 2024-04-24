@@ -15,7 +15,7 @@ def images():
 def objects():
     version = get_versions(__file__)[name]["version"]
     ip_sharing_hash = "2ec8f273ced93e06"
-    server_dns = "irc-dev.ocf.berkeley.edu"
+    server_dns = "irc.ocf.berkeley.edu"
 
     # ircd.motd
     ergo_motd = "Welcome to the OCF IRC network!"
