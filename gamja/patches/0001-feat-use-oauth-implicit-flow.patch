@@ -1,0 +1,126 @@
+From 9191a9652481e9c397445a342ca2984507fd1bb1 Mon Sep 17 00:00:00 2001
+From: Oliver Ni <oliver.ni@gmail.com>
+Date: Tue, 23 Apr 2024 21:38:17 -0700
+Subject: [PATCH] feat: use oauth implicit flow
+
+---
+ components/app.js | 27 +++++++++++----------------
+ lib/client.js     | 13 ++++++++-----
+ lib/oauth2.js     |  3 ++-
+ 3 files changed, 21 insertions(+), 22 deletions(-)
+
+diff --git a/components/app.js b/components/app.js
+index dcd1dfd..e323f33 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -325,9 +325,10 @@ export default class App extends Component {
+ 			this.debug = true;
+ 		}
+ 
+-		if (window.location.hash) {
+-			autojoin = window.location.hash.split(",");
+-		}
++		// We use hash for oauth implicit grant flow
++		// if (window.location.hash) {
++		// 	autojoin = window.location.hash.split(",");
++		// }
+ 
+ 		this.config = config;
+ 
+@@ -340,13 +341,14 @@ export default class App extends Component {
+ 		}
+ 
+ 		if (config.server.auth === "oauth2" && !connectParams.saslOauthBearer) {
+-			if (queryParams.error) {
+-				console.error("OAuth 2.0 authorization failed: ", queryParams.error);
+-				this.showError("Authentication failed: " + (queryParams.error_description || queryParams.error));
++			const hashParams = new URLSearchParams(window.location.hash.slice(1));
++			if (hashParams.error) {
++				console.error("OAuth 2.0 authorization failed: ", hashParams.error);
++				this.showError("Authentication failed: " + (hashParams.error_description || hashParams.error));
+ 				return;
+ 			}
+ 
+-			if (!queryParams.code) {
++			if (!hashParams.get("access_token")) {
+ 				this.redirectOauth2Authorize();
+ 				return;
+ 			}
+@@ -354,17 +356,10 @@ export default class App extends Component {
+ 			// Strip code from query params, to prevent page refreshes from
+ 			// trying to exchange the code again
+ 			let url = new URL(window.location.toString());
+-			url.searchParams.delete("code");
+-			url.searchParams.delete("state");
++			url.hash = "";
+ 			window.history.replaceState(null, "", url.toString());
+ 
+-			let saslOauthBearer;
+-			try {
+-				saslOauthBearer = await this.exchangeOauth2Code(queryParams.code);
+-			} catch (err) {
+-				this.showError(err);
+-				return;
+-			}
++			let saslOauthBearer = { token: hashParams.get("access_token") };
+ 
+ 			connectParams.saslOauthBearer = saslOauthBearer;
+ 
+diff --git a/lib/client.js b/lib/client.js
+index f94f0e6..39cdc36 100644
+--- a/lib/client.js
++++ b/lib/client.js
+@@ -467,18 +467,19 @@ export default class Client extends EventTarget {
+ 		console.log(`Starting SASL ${mechanism} authentication`);
+ 
+ 		// Send the first SASL response immediately to avoid a roundtrip
+-		let initialResp = null;
++		let initialResps = [];
+ 		switch (mechanism) {
+ 		case "PLAIN":
+ 			let respStr = base64.encode("\0" + params.username + "\0" + params.password);
+-			initialResp = { command: "AUTHENTICATE", params: [respStr] };
++			initialResps.push({ command: "AUTHENTICATE", params: [respStr] });
+ 			break;
+ 		case "EXTERNAL":
+-			initialResp = { command: "AUTHENTICATE", params: ["+"] };
++			initialResps.push({ command: "AUTHENTICATE", params: ["+"] });
+ 			break;
+ 		case "OAUTHBEARER":
+ 			let raw = "n,,\x01auth=Bearer " + params.token + "\x01\x01";
+-			initialResp = { command: "AUTHENTICATE", params: [base64.encode(raw)] };
++			let groups = base64.encode(raw).match(/.{1,400}/g);
++			initialResps.push(...groups.map(x => ({ command: "AUTHENTICATE", params: [x] })));
+ 			break;
+ 		default:
+ 			throw new Error(`Unknown authentication mechanism '${mechanism}'`);
+@@ -497,7 +498,9 @@ export default class Client extends EventTarget {
+ 				throw new IRCError(msg);
+ 			}
+ 		});
+-		this.send(initialResp);
++		for (const initialResp of initialResps) {
++			this.send(initialResp);
++		}
+ 		return promise;
+ 	}
+ 
+diff --git a/lib/oauth2.js b/lib/oauth2.js
+index 5ab3f95..2447e5c 100644
+--- a/lib/oauth2.js
++++ b/lib/oauth2.js
+@@ -43,9 +43,10 @@ export function redirectAuthorize({ serverMetadata, clientId, redirectUri, scope
+ 	// TODO: use the state param to prevent cross-site request
+ 	// forgery
+ 	let params = {
+-		response_type: "code",
++		response_type: "token",
+ 		client_id: clientId,
+ 		redirect_uri: redirectUri,
++		state: "testing123",
+ 	};
+ 	if (scope) {
+ 		params.scope = scope;
+-- 
+2.43.0
+

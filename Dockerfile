@@ -1,10 +1,19 @@
 # syntax=docker/dockerfile:1.5-labs
-FROM docker.io/node:20 AS build
+FROM docker.io/node:20-alpine AS build
 
 # This doesn't work because sr.ht is not github LOL
 # ADD --keep-git-dir=false https://git.sr.ht/~emersion/gamja /gamja
-ADD https://git.sr.ht/~emersion/gamja/archive/master.tar.gz /gamja.tar.gz
-RUN tar -xzf /gamja.tar.gz && mv /gamja-master /gamja && cd /gamja && npm install --production
+RUN apk add bash git
+RUN git clone https://git.sr.ht/~emersion/gamja /gamja
+WORKDIR /gamja
+
+# Apply patches
+RUN mkdir /gamja-patches
+COPY gamja/patches/*.patch /gamja-patches
+ENV GIT_COMMITTER_NAME="ocfbot" GIT_COMMITTER_EMAIL="ocfbot@ocf.berkeley.edu"
+RUN bash -c "git am < /gamja-patches/*.patch"
+
+RUN npm install --production
 
 FROM docker.io/caddy:2.7 AS gamja
 
