@@ -1,7 +1,8 @@
 {
 	"server": {
 		"url": "wss://irc-dev.ocf.berkeley.edu:8097",
-		"autojoin": "#rebuild"
+		"autojoin": "#rebuild",
+		"auth": "oauth2"
 	},
 	"oauth2": {
 		"url": "https://idm.ocf.berkeley.edu/realms/ocf",
