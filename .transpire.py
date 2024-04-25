@@ -1,8 +1,9 @@
 from pathlib import Path
-from transpire.utils import get_versions, get_image_tag
-from transpire.types import Image
-from transpire.resources import Deployment
+
 import yaml
+from transpire.resources import Deployment
+from transpire.types import Image
+from transpire.utils import get_image_tag, get_versions
 
 name = "ergo"
 
@@ -28,7 +29,6 @@ def objects():
             "listeners": {
                 "127.0.0.1:6667": None,
                 "[::1]:6667": None,
-
                 "[::]:6697": {
                     "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                     "proxy": False,
@@ -38,7 +38,6 @@ def objects():
                     "websocket": True,
                     "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                 },
-
             },
             "unix-bind-mode": 511,
             "tor-listeners": {
@@ -184,7 +183,7 @@ def objects():
                 "client-id": "ergo",
                 # Set via ERGO__ACCOUNTS__OAUTH2__CLIENT_SECRET
                 # "client-secret": ""
-            }
+            },
         },
         "channels": {
             "default-modes": "+ntC",
@@ -233,11 +232,16 @@ def objects():
                 "certfp": "37:0F:A3:D1:E6:4C:FA:59:47:25:5B:E4:12:AF:89:9C:87:83:C2:6D:57:E4:CA:33:4D:01:F4:58:C5:58:48:E2",
                 "hidden": True,
                 "auto": True,
-            }
+            },
+            "oliverni": {
+                "class": "server-admin",
+                "whois-line": "2020-2024 OCF Root Staff",
+                "certfp": "5B:B7:F9:C7:AF:13:D7:46:A2:86:2B:88:C0:42:E9:F2:EF:D3:50:ED:3D:0C:F0:4C:DF:C1:D9:14:AE:D6:16:FA",
+                "hidden": True,
+                "auto": True,
+            },
         },
-        "logging": [
-            {"method": "stderr", "type": "* -userinput -useroutput", "level": "debug"}
-        ],
+        "logging": [{"method": "stderr", "type": "* -userinput -useroutput", "level": "debug"}],
         "debug": {"recover-from-errors": True},
         "lock-file": "/ircd/db/ircd.lock",
         "datastore": {
@@ -475,7 +479,7 @@ def objects():
                         {
                             "name": "sopel-plugins",
                             "configMap": {"name": "sopel-plugins"},
-                        }
+                        },
                     ],
                 },
             },
