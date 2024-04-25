@@ -28,15 +28,17 @@ def objects():
             "listeners": {
                 "127.0.0.1:6667": None,
                 "[::1]:6667": None,
-                ":6697": {
+
+                "[::]:6697": {
                     "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                     "proxy": False,
                     "min-tls-version": 1.2,
                 },
-                ":8097": {
+                "[::]:8097": {
                     "websocket": True,
                     "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
                 },
+
             },
             "unix-bind-mode": 511,
             "tor-listeners": {
