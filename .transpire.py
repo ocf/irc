@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import yaml
-from transpire.resources import Deployment
 from transpire.types import Image
 from transpire.utils import get_image_tag, get_versions
+from secrets import token_urlsafe
 
 name = "ergo"
 
@@ -18,6 +18,92 @@ def objects():
     ip_sharing_hash = "2ec8f273ced93e06"
     server_dns = "irc.ocf.berkeley.edu"
 
+    # Database
+    yield {
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "metadata": {"name": "mariadb-secret"},
+        "type": "Opaque",
+        "stringData": {
+            "root_password": token_urlsafe(24),
+            "password": token_urlsafe(24),
+        },
+    }
+
+    yield {
+        "apiVersion": "apps/v1",
+        "kind": "StatefulSet",
+        "metadata": {"name": "mariadb"},
+        "spec": {
+            "serviceName": "mariadb",
+            "replicas": 1,
+            "selector": {"matchLabels": {"app": "mariadb"}},
+            "template": {
+                "metadata": {"labels": {"app": "mariadb"}},
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "mariadb",
+                            "image": "docker.io/mariadb:11-jammy",
+                            "ports": [{"containerPort": 3306}],
+                            "env": [
+                                {
+                                    "name": "MARIADB_ROOT_PASSWORD",
+                                    "valueFrom": {
+                                        "secretKeyRef": {
+                                            "name": "mariadb-secret",
+                                            "key": "root_password",
+                                        }
+                                    },
+                                },
+                                {
+                                    "name": "MARIADB_PASSWORD",
+                                    "valueFrom": {
+                                        "secretKeyRef": {
+                                            "name": "mariadb-secret",
+                                            "key": "password",
+                                        }
+                                    },
+                                },
+                                {
+                                    "name": "MARIADB_DATABASE",
+                                    "value": "ergo_history",
+                                },
+                                {
+                                    "name": "MARIADB_USER",
+                                    "value": "ergo",
+                                },
+                            ],
+                            "volumeMounts": [
+                                {"name": "mariadb-data", "mountPath": "/var/lib/mysql"}
+                            ],
+                        }
+                    ]
+                },
+            },
+            "volumeClaimTemplates": [
+                {
+                    "metadata": {"name": "mariadb-data"},
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": "64Gi"}},
+                    },
+                }
+            ],
+        },
+    }
+
+    yield {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {"name": "mariadb"},
+        "spec": {
+            "selector": {"app": "mariadb"},
+            "ports": [{"protocol": "TCP", "port": 3306, "targetPort": 3306}],
+            "type": "ClusterIP",
+        },
+    }
+
     # ircd.motd
     ergo_motd = "Welcome to the OCF IRC network!"
 
@@ -30,13 +116,19 @@ def objects():
                 "127.0.0.1:6667": None,
                 "[::1]:6667": None,
                 "[::]:6697": {
-                    "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
+                    "tls": {
+                        "cert": "/etc/ssl/server_certs/tls.crt",
+                        "key": "/etc/ssl/server_certs/tls.key",
+                    },
                     "proxy": False,
                     "min-tls-version": 1.2,
                 },
                 "[::]:8097": {
                     "websocket": True,
-                    "tls": {"cert": "/etc/ssl/server_certs/tls.crt", "key": "/etc/ssl/server_certs/tls.key"},
+                    "tls": {
+                        "cert": "/etc/ssl/server_certs/tls.crt",
+                        "key": "/etc/ssl/server_certs/tls.key",
+                    },
                 },
             },
             "unix-bind-mode": 511,
@@ -119,16 +211,16 @@ def objects():
         "accounts": {
             "authentication-enabled": True,
             "registration": {
-                "enabled": False,
+                "enabled": True,
                 "allow-before-connect": True,
                 "throttling": {"enabled": True, "duration": "10m", "max-attempts": 30},
                 "bcrypt-cost": 4,
                 "verify-timeout": "32h",
                 "email-verification": {
                     "enabled": False,
-                    "sender": "admin@my.network",
+                    "sender": "create@ocf.berkeley.edu",
                     "require-tls": True,
-                    "helo-domain": "my.network",
+                    "helo-domain": "ocf.berkeley.edu",
                     "address-blacklist": None,
                     "address-blacklist-syntax": "glob",
                     "timeout": "60s",
@@ -241,19 +333,24 @@ def objects():
                 "auto": True,
             },
         },
-        "logging": [{"method": "stderr", "type": "* -userinput -useroutput", "level": "debug"}],
+        "logging": [
+            {"method": "stderr", "type": "* -userinput -useroutput", "level": "debug"}
+        ],
         "debug": {"recover-from-errors": True},
         "lock-file": "/ircd/db/ircd.lock",
         "datastore": {
             "path": "/ircd/db/ircd.db",
             "autoupgrade": True,
             "mysql": {
-                "enabled": False,
-                "host": "localhost",
+                "enabled": True,
+                "host": "mariadb",
                 "port": 3306,
-                "user": "ergo",
-                "password": "hunter2",
-                "history-database": "ergo_history",
+                # Set via ERGO__DATASTORE__MYSQL__USER
+                # "user": "ergo",
+                # Set via ERGO__DATASTORE__MYSQL__PASSWORD
+                # "password": "hunter2",
+                # Set via ERGO__DATASTORE__MYSQL__HISTORY_DATABASE
+                # "history-database": "ergo_history",
                 "timeout": "3s",
                 "max-conns": 4,
             },
@@ -272,7 +369,7 @@ def objects():
             "multiline": {"max-bytes": 4096, "max-lines": 100},
         },
         "fakelag": {
-            "enabled": True,
+            "enabled": False,
             "window": "1s",
             "burst-limit": 7,
             "messages-per-window": 3,
@@ -293,19 +390,19 @@ def objects():
         "extjwt": None,
         "history": {
             "enabled": True,
-            "channel-length": 2048,
-            "client-length": 256,
+            "channel-length": 4096,
+            "client-length": 512,
             "autoresize-window": "3d",
             "autoreplay-on-join": 0,
-            "chathistory-maxmessages": 1000,
-            "znc-maxmessages": 2048,
+            "chathistory-maxmessages": 2000,
+            "znc-maxmessages": 4096,
             "restrictions": {
-                "expire-time": "1w",
+                "expire-time": "4w",
                 "query-cutoff": "none",
                 "grace-period": "1h",
             },
             "persistent": {
-                "enabled": False,
+                "enabled": True,
                 "unregistered-channels": False,
                 "registered-channels": "opt-out",
                 "direct-messages": "opt-out",
@@ -315,7 +412,7 @@ def objects():
                 "enable-account-indexing": False,
             },
             "tagmsg-storage": {
-                "default": False,
+                "default": True,
                 "whitelist": ["+draft/react", "+react"],
             },
         },
@@ -363,7 +460,26 @@ def objects():
                             "volumeMounts": [
                                 {"name": "ircd-volume", "mountPath": "/ircd/db"},
                                 {"name": "ircd-config", "mountPath": "/ircd"},
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
+                                {
+                                    "name": "ircd-tls",
+                                    "mountPath": "/etc/ssl/server_certs",
+                                },
+                            ],
+                            "env": [
+                                {"name": "ERGO__DATASTORE__MYSQL__USER", "value": "ergo"},
+                                {
+                                    "name": "ERGO__DATASTORE__MYSQL__PASSWORD",
+                                    "valueFrom": {
+                                        "secretKeyRef": {
+                                            "name": "mariadb-secret",
+                                            "key": "password",
+                                        }
+                                    },
+                                },
+                                {
+                                    "name": "ERGO__DATASTORE__MYSQL__HISTORY_DATABASE",
+                                    "value": "ergo_history",
+                                },
                             ],
                             "envFrom": [{"secretRef": {"name": "ircd-secrets"}}],
                         },
@@ -372,7 +488,10 @@ def objects():
                             "image": get_image_tag("gamja"),
                             "ports": [{"containerPort": 80}, {"containerPort": 443}],
                             "volumeMounts": [
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
+                                {
+                                    "name": "ircd-tls",
+                                    "mountPath": "/etc/ssl/server_certs",
+                                },
                             ],
                         },
                         {
@@ -385,7 +504,10 @@ def objects():
                             ],
                             "volumeMounts": [
                                 {"name": "ircd-config", "mountPath": "/ircd"},
-                                {"name": "ircd-tls", "mountPath": "/etc/ssl/server_certs"},
+                                {
+                                    "name": "ircd-tls",
+                                    "mountPath": "/etc/ssl/server_certs",
+                                },
                             ],
                         },
                     ],
