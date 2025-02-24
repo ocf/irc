@@ -9,8 +9,8 @@ name = "ergo"
 
 
 def images():
-    yield Image(name="gamja", path=Path("/"), target="gamja")
-    yield Image(name="sopel", path=Path("/"), target="sopel")
+    yield Image(name="gamja", path=Path("/"), target="gamja", registry="ghcr")
+    yield Image(name="sopel", path=Path("/"), target="sopel", registry="ghcr")
 
 
 def objects():
