@@ -1,10 +1,8 @@
 # syntax=docker/dockerfile:1.5-labs
 FROM docker.io/node:20-alpine AS build
 
-# This doesn't work because sr.ht is not github LOL
-# ADD --keep-git-dir=false https://git.sr.ht/~emersion/gamja /gamja
 RUN apk add bash git
-RUN git clone https://git.sr.ht/~emersion/gamja /gamja
+RUN git clone https://codeberg.org/emersion/gamja /gamja
 WORKDIR /gamja
 
 # Apply patches
