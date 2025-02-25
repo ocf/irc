@@ -8,8 +8,8 @@ WORKDIR /gamja
 # Apply patches
 RUN mkdir /gamja-patches
 COPY gamja/patches/*.patch /gamja-patches
-ENV GIT_COMMITTER_NAME="ocfbot" GIT_COMMITTER_EMAIL="ocfbot@ocf.berkeley.edu"
-RUN bash -c "git am < /gamja-patches/*.patch"
+ENV GIT_COMMITTER_NAME="ocfbot" GIT_COMMITTER_EMAIL="ocfbot@berkeley.edu"
+RUN cd /gamja && ls /gamja-patches/*.patch | while read patch; do git am -3 "$patch" || git am --skip; done
 
 RUN npm install --production
 
