@@ -41,6 +41,9 @@ def objects():
             "template": {
                 "metadata": {"labels": {"app": "mariadb"}},
                 "spec": {
+                    "securityContext": {
+                        "fsGroup": 1000,
+                    },
                     "containers": [
                         {
                             "name": "mariadb",
