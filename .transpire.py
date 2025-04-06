@@ -41,8 +41,11 @@ def objects():
             "template": {
                 "metadata": {"labels": {"app": "mariadb"}},
                 "spec": {
+                    # Make .sopel/logs writable
                     "securityContext": {
-                        "fsGroup": 1000,
+                        "runAsUser": 1000,   
+                        "runAsGroup": 1000,   
+                        "fsGroup": 1000       
                     },
                     "containers": [
                         {
