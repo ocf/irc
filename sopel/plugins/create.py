@@ -68,7 +68,7 @@ def setup(bot):
 @plugin.require_admin(reply=True)
 def approve(bot, trigger):
     """Approve a pending account."""
-    user_name = trigger.group(1)
+    user_name = trigger.group(2)
     tasks.approve_request.delay(user_name)
     bot.reply(f"approved {user_name}, the account is being created")
 
@@ -77,7 +77,7 @@ def approve(bot, trigger):
 @plugin.require_admin(reply=True)
 def reject(bot, trigger):
     """Reject a pending account."""
-    user_name = trigger.group(1)
+    user_name = trigger.group(2)
     tasks.reject_request.delay(user_name)
     bot.reply(f"rejected {user_name}, better luck next time")
 

@@ -9,7 +9,7 @@ from sopel import plugin
 @plugin.rule(r"is ([a-z]+) in the lab")
 def in_lab(bot, trigger):
     """Check if a staffer is in the lab."""
-    username = trigger.group(1).strip()
+    username = trigger.group(2).strip()
     for session in staff_in_lab():
         if username == session.user:
             bot.reply(f"{username} is in the lab")

@@ -23,7 +23,7 @@ GROUP_COLOR_MAPPING = {
 @plugin.command("check")
 def check(bot, trigger):
     """Print information about an OCF user."""
-    user = trigger.group(1).strip()
+    user = trigger.group(2).strip()
     attrs = search.user_attrs(user)
 
     if attrs is not None:
@@ -61,7 +61,7 @@ def alphanum(word):
 @plugin.command("checkacct")
 def checkacct(bot, trigger):
     """Print matching OCF usernames."""
-    search_term = trigger.group(1).strip()
+    search_term = trigger.group(2).strip()
     keywords = search_term.split()
 
     if len(keywords) > 0:
