@@ -132,7 +132,6 @@ def celery_listener(bot):
             "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt",
             "ssl_cert_reqs": ssl.CERT_REQUIRED,
         },
-        transport="redis"
     )
 
     def bot_announce(targets, message):
